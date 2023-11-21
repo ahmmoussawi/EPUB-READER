@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MOUSSAWI READER</title>
+  
+    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script src="turn.min.js"></script> <!-- Ensure this path is correct -->
+    <style>
+        body {
+            display: block;
+            text-align: center;
+        }
+    
+        #book {
+            width: 290px;
+            height: 580px;
+            margin: 20px auto;
+        }
+    
+        #book .page {
+            width: 290px;
+            height: 580px;
+            background-color: white;
+            text-align: center;
+            line-height: 580px;
+            font-size: 24px;
+            color: black;
+        }
+
+        .button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="book">
+        <div class="page">Page 1</div>
+        <div class="page">Page 2</div>
+        <!-- Add more pages as needed -->
+    </div>
+
+    <button class="button" id="prev">Previous</button>
+    <button class="button" id="next">Next</button>
+  
+    <script>
+        $(document).ready(function() {
+            $('#book').turn({
+                autoCenter: true
+            });
+
+            // Next button
+            $('#next').click(function() {
+                $('#book').turn('next');
+            });
+
+            // Previous button
+            $('#prev').click(function() {
+                $('#book').turn('previous');
+            });
+
+            // Swipe events for mobile
+            $('#book').on('swipeleft', function() {
+                $('#book').turn('next');
+            });
+
+            $('#book').on('swiperight', function() {
+                $('#book').turn('previous');
+            });
+        });
+        $(window).on( "swipeleft", function( event ) {
+            $('#book').turn('next');
+     });
+    
+     $(window).on( "swiperight", function( event ) {
+        $('#book').turn('previous');
+     });
+    </script>
+</body>
+</html>
