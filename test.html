@@ -1,83 +1,305 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MOUSSAWI READER</title>
-  
-    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-    <script src="turn.min.js"></script> <!-- Ensure this path is correct -->
-    <style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.min.js"></script>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="turn.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="Style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style type="text/css">
         body {
-            display: block;
-            text-align: center;
-        }
-    
-        #book {
-            width: 290px;
-            height: 580px;
-            margin: 20px auto;
-        }
-    
-        #book .page {
-            width: 290px;
-            height: 580px;
-            background-color: white;
-            text-align: center;
-            line-height: 580px;
-            font-size: 24px;
-            color: black;
+            display: Block;
+
         }
 
-        .button {
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
+        #viewer {
+            width: 290px;
+            height: 580px;
+            box-shadow: 0 0 4px #ccc;
+            padding: 10px 10px 0px 10px;
+            margin: 5px auto;
+            background: white;
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        .hidden {
+            opacity: 0;
+        }
+        #magazine{
+            width:100%;
+            height:752px;
+        }
+        #magazine .turn-page{
+            background-color:rgba(248, 243, 243, 0.89);
+            background-size:100% 100%;
+        }
+            
+        #Showbooks {
+                width: 200px;
+                height: 80px;
+                font-size: 14px;
+                text-align: center;
+                display: flex;
+                margin: auto;
+                justify-content: center;
+                padding-top: 20px;
+        }
+        
+        @media only screen and (min-device-width : 320px) and (max-device-width : 667px) {
+            #viewer {
+                width: auto !important;
+                height: 90%;
+            }
+
+            #viewer iframe {
+                /* pointer-events: none; */
+            }
+
+            .arrow {
+                position: inherit;
+                display: none;
+            }
+           
         }
     </style>
 </head>
+
 <body>
-    <div id="book">
-        <div class="page">Page 1</div>
-        <div class="page">Page 2</div>
-        <!-- Add more pages as needed -->
+    <button id="Showbooks">Show Books</button>
+    <ul id="bookList">
+        <!-- List of books will be populated here -->
+    </ul>
+    <div id="header">
+        <a href="#" id="navArrowLeft" class="header-icon"><i class="header-icon fas fa-arrow-left"></i></a>
+        <div id="icons-container">  
+            <i class="header-icon fas fa-thumbtack" id="pinIcon"></i>
+            <i class="header-icon fas fa-search" id="searchIcon"></i>
+            <i class="header-icon fas fa-list" id="listIcon"></i>
+        </div>
     </div>
-
-    <button class="button" id="prev">Previous</button>
-    <button class="button" id="next">Next</button>
-  
-    <script>
-        $(document).ready(function() {
-            $('#book').turn({
-                autoCenter: true
-            });
-
-            // Next button
-            $('#next').click(function() {
-                $('#book').turn('next');
-            });
-
-            // Previous button
-            $('#prev').click(function() {
-                $('#book').turn('previous');
-            });
-
-            // Swipe events for mobile
-            $('#book').on('swipeleft', function() {
-                $('#book').turn('next');
-            });
-
-            $('#book').on('swiperight', function() {
-                $('#book').turn('previous');
-            });
-        });
-        $(window).on( "swipeleft", function( event ) {
-            $('#book').turn('next');
-     });
     
-     $(window).on( "swiperight", function( event ) {
-        $('#book').turn('previous');
-     });
+    <!-- <div id="title"></div> -->
+    <div class="custom-select">
+        <div class="selected-value">Select an Option</div>
+        <ul class="options-list selecthidden">
+            <!-- Add more options as needed -->
+        </ul>
+    </div>
+    <select id="toc"></select>
+    <div id="viewer"></div>
+    <a id="prev" href="#prev" class="arrow">‹</a>
+    <a id="next" href="#next" class="arrow">›</a>
+
+    <script>
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    var select = document.querySelector('.custom-select');
+    var selectedValue = select.querySelector('.selected-value');
+    var optionsList = select.querySelector('.options-list');
+
+    // Toggle dropdown
+    selectedValue.addEventListener('click', function() {
+        optionsList.classList.toggle('selecthidden');
+    });
+
+    
+});
+
+//open drop down on lst click
+document.getElementById('listIcon').addEventListener('click', function() {
+    document.querySelector('.custom-select .selected-value').click();
+});
+        
+        document.getElementById("Showbooks").onclick = function() {
+            document.getElementById('bookList').innerHTML = '';
+             var books = [
+                { title: "Al Din AlQayem", url: "test1.epub" },
+                { title: "Auction Book", url: "pg72176.epub" }
+                // Add more books as needed
+            ];
+
+            var bookList = document.getElementById('bookList');
+
+            
+
+            books.forEach(function(book) {
+                var listItem = document.createElement('li');
+                listItem.textContent = book.title;
+                listItem.onclick = function() {
+                    document.getElementById('viewer').innerHTML = '';
+                    document.getElementById('toc').innerHTML = '';
+                    loadEpub(book.url);
+                };
+                bookList.appendChild(listItem);
+            });
+        };
+        //epub begining
+
+        var params = URLSearchParams && new URLSearchParams(document.location.search.substring(1));
+        var url = params && params.get("url") && decodeURIComponent(params.get("url"));
+        var currentSectionIndex = (params && params.get("loc")) ? params.get("loc") : undefined;
+
+        function loadEpub(bookUrl) {
+                // Load the epub links
+                var book = ePub(url || bookUrl);
+                var rendition = book.renderTo("viewer", {
+                    manager: "continuous",
+                    flow: "paginated",
+                    width: "100%",
+                    height: "100%",
+                    snap: true,
+                    direction: "rtl"
+                });
+
+                rendition.display(currentSectionIndex);
+                book.loaded.navigation.then(function (toc) {
+                // console.log(toc);
+            });
+
+            
+
+            //var displayed = rendition.display("chapter_001.xhtml");
+
+            //displayed.then(function(renderer){
+            // -- do stuff
+            //});
+            
+            // Navigation loaded
+        
+
+            var next = document.getElementById("next");
+            next.addEventListener("click", function () {
+                rendition.next();
+            }, false);
+
+
+            var prev = document.getElementById("prev");
+            prev.addEventListener("click", function () {
+                rendition.prev();
+            }, false);
+
+
+
+            document.addEventListener("keyup", function (e) {
+
+                // Left Key
+                if ((e.keyCode || e.which) == 37) {
+                    rendition.prev();
+                }
+
+                // Right Key
+                if ((e.keyCode || e.which) == 39) {
+                    rendition.next();
+                }
+
+            }, false);
+
+            var $list = document.querySelector(".custom-select .options-list");
+            var selectedValue = document.querySelector('.custom-select .selected-value');
+            var select = document.querySelector('.custom-select');
+            var optionsList = select.querySelector('.options-list');
+
+            $list.addEventListener('click', function (event) {
+                if (event.target.tagName.toLowerCase() === 'li') {
+                    selectedValue.textContent = event.target.textContent;
+                    optionsList.classList.add('selecthidden');
+                    var url = event.target.getAttribute("ref");
+                    rendition.display(url);
+                }
+            });
+
+            rendition.on("rendered", function (section) {
+                var current = book.navigation && book.navigation.get(section.href);
+
+
+                if (current) {
+                    console.log("Current section:", section);
+                console.log("Section href:", section.href);
+                    var selectedValue = document.querySelector('.custom-select .selected-value');
+                    var $list = document.querySelector(".custom-select .options-list");
+                    var $selectedItems = $list.querySelectorAll("li[selected]");
+
+                    // Deselect all items
+                    $selectedItems.forEach(function (item) {
+                        item.removeAttribute("selected");
+                    });
+
+                    // Select the current item
+                    var $options = $list.querySelectorAll("li");
+                    $options.forEach(function (option) {
+                        let isSelected = option.getAttribute("ref") === current.href;
+                        if (isSelected) {
+                            option.setAttribute("selected", "");
+                            selectedValue.textContent = option.textContent; // Update the displayed value
+                        }
+                    });
+                }
+            });
+
+
+            book.loaded.navigation.then(function (toc) {
+                var $list = document.querySelector(".custom-select .options-list"),
+                    docfrag = document.createDocumentFragment();
+
+                toc.forEach(function (chapter) {
+                    var li = document.createElement("li");
+                    li.textContent = chapter.label;
+                    li.setAttribute("ref", chapter.href);
+
+                    docfrag.appendChild(li);
+                });
+
+                $list.appendChild(docfrag);
+            });
+
+
+
+            $(window).on("swipeleft", function (event) {
+            rendition.next();
+            });
+
+            $(window).on("swiperight", function (event) {
+                rendition.prev();
+            });
+            //swipe effects
+            /*
+            $(window).ready(function () {
+                    $('#magazine').turn({
+                        display: 'single',
+                        acceleration: true,
+                        gradients: !$.isTouch,
+                        elevation: 50,
+                        when: {
+                            turned: function (e, page) {
+                                /*console.log('Current view: ', $(this).turn('view'));
+                            }
+                        }
+                    });
+                });
+
+
+                $(window).bind('keydown', function (e) {
+
+                    if (e.keyCode == 37)
+                        $('#magazine').turn('previous');
+                    else if (e.keyCode == 39)
+                        $('#magazine').turn('next');
+
+                });
+                */
+
+        }
+
     </script>
+
 </body>
+
 </html>

@@ -281,4 +281,75 @@ body {
     stroke: #777;
     fill: #777;
   }
-  
+  /*header styling */
+  #header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #f8f8f8; /* Adjust background color as needed */
+}
+
+#icons-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.header-icon {
+    margin-left: 10px; /* Space between icons */
+    cursor: pointer;
+}
+
+/* Add styles for your icons here */
+/* Example, if using Font Awesome, you might have something like this: */
+.header-icon {
+    font-size: 20px; /* Adjust size as needed */
+}
+
+#navArrowLeft {
+    font-size: 20px; /* Adjust size as needed */
+    cursor: pointer;
+}
+
+/* drop down list styling */
+.custom-select {
+  position: relative;
+  width: 100%; /* Adjust as needed */
+  cursor: pointer;
+}
+
+.custom-select .selected-value {
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+.custom-select .options-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+  max-height: 90vh; /* 90% of the viewport height */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.custom-select .options-list li {
+  padding: 10px;
+  border-top: 1px solid #eee;
+  cursor: pointer;
+}
+
+.custom-select .options-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.selecthidden {
+  display: none;
+}
+
