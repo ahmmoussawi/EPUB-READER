@@ -166,7 +166,7 @@
 
         function loadEpub(bookUrl) {
                 // Load the epub links
-                var book = ePub(url || "test1.epub");
+                var book = ePub(url || bookUrl);
                 var rendition = book.renderTo("viewer", {
                     width: "100%",
                     height: 700,
