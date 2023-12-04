@@ -417,7 +417,7 @@ body {
   left: 0;
   bottom: 0; /* Start from bottom */
   width: 100%;
-  height: 85%;
+  height: 81%;
   overflow: auto;
   background-color: rgba(0,0,0,0.4);
   animation-name: slideUp; /* Apply the animation */
@@ -428,7 +428,7 @@ body {
 
 .search-modal-content {
   background-color: #fefefe;
-  margin: 15% auto;
+  margin: 2% auto;
   padding: 20px;
   border: 1px solid #888;
   width: 80%;
@@ -450,8 +450,9 @@ body {
 
 .search-results {
   margin-top: 20px;
-  max-height: 300px;
+  max-height: 520px;
   overflow-y: auto;
+  display: block;
 }
 
 

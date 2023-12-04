@@ -33,6 +33,21 @@
         .hidden {
             opacity: 0;
         }
+        .highlight {
+    background-color: yellow;
+    color: black;
+}
+
+.search-result-item {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.search-result-item:hover {
+    background-color: #f0f0f0;
+}
         #magazine{
             width:100%;
             height:752px;
@@ -315,8 +330,30 @@
                     this.book.destroy();
                 });
 
-               // ...
+               // swipe effedt navigation to
+               rendition.on("displayed", event => {
+                let start = null;
+                let end = null;
+                const el = event.document.documentElement;
 
+                el.addEventListener('touchstart', event => {
+                    start = event.changedTouches[0];
+                    console.log("start touch");
+                });
+                el.addEventListener('touchend', event => {
+                    end = event.changedTouches[0];
+
+                    let hr = (end.screenX - start.screenX) / el.getBoundingClientRect().width;
+                    let vr = (end.screenY - start.screenY) / el.getBoundingClientRect().height;
+
+                    if (hr > vr && hr > 0.25) return rendition.prev();
+                    if (hr < vr && hr < -0.25) return rendition.next();
+                    if (vr > hr && vr > 0.25) return;
+                    if (vr < hr && vr < -0.25) return;
+                });
+            });
+
+            //book filing drop down list
             book.loaded.navigation.then(function (toc) {
                 var $select = document.getElementById("toc"),
                     $customSelect = document.querySelector('.custom-select'),
@@ -405,42 +442,90 @@
             }
 
             // Implement search functionality
+            ////////////////////////////////////////////////////////////////////////
+            function doSearch(q) {
+                return Promise.all(
+                    book.spine.spineItems.map(item =>
+                        item.load(book.load.bind(book))
+                            .then(item.find.bind(item, q))
+                            .finally(item.unload.bind(item))
+                    )
+                ).then(results => {
+                    // Flatten the results array and add chapter information
+                    return [].concat.apply([], results).map(result => {
+                        // Add chapter href to each result for navigation
+                        result.href = result.baseUri;
+                        return result;
+                    });
+                });
+            }
+                    
             document.getElementById('bookSearchInput').addEventListener('input', function (e) {
-                var searchValue = e.target.value;
-
-                if (searchValue.length > 2) { // Search when there are 3 or more characters
-                    // Function to search the book content
-                    searchBookContent(searchValue);
+                var searchQuery = e.target.value.trim();
+                if (searchQuery.length > 2) {
+                    doSearch(searchQuery).then(results => {
+                        displaySearchResults(results, searchQuery);
+                    });
                 } else {
                     document.getElementById('searchResults').innerHTML = '';
                 }
             });
 
-            function searchBookContent(query) {
-    //var book = ePub("path/to/book/"); // Load your book
-    var results = document.getElementById('searchResults');
-    results.innerHTML = ''; // Clear previous results
 
-    book.loaded.navigation.then(function(toc) {
-        toc.forEach(function(chapter) {
-            book.load(chapter.href).then(function(contents) {
-                var doc = contents.document;
-                var text = doc.body.textContent || "";
 
-                if(text.toLowerCase().includes(query.toLowerCase())) {
-                    var element = document.createElement('div');
-                    element.innerText = "Found in: " + chapter.label;
-                    results.appendChild(element);
+            function displaySearchResults(results, query) {
+                var resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<div>No matches found</div>';
+                    return;
                 }
-            });
+
+                results.forEach(function (result) {
+                    var resultElement = document.createElement('div');
+                    resultElement.className = 'search-result-item';
+                    // Use query for highlighting
+                    resultElement.innerHTML = `<strong>${result.excerpt.replace(new RegExp(query, "gi"), match => `<span class='highlight'>${match}</span>`)}</strong>`;
+                    resultElement.addEventListener('click', function () {
+                        book.rendition.display(result.cfi); // Navigate to the specific CFI
+                        modal.style.display = "none";
+                    });
+                    resultsContainer.appendChild(resultElement);
+                });
+            }
+function highlightTextInSection(query) {
+    var currentContents = book.rendition.getContents();
+    if (currentContents && query.length > 2) {
+        currentContents.forEach(content => {
+            var doc = content.document;
+            var body = doc.body;
+            var text = body.innerHTML;
+            var searchRegex = new RegExp(query, 'gi');
+
+            // Replace and highlight the found text
+            body.innerHTML = text.replace(searchRegex, `<span class='highlight'>${query}</span>`);
+            console.log(text);
         });
-    });
+    }
 }
 
 
 
 
-            
+            function createSnippet(text, term, contextLength = 30) {
+    var index = text.toLowerCase().indexOf(term.toLowerCase());
+    if (index === -1) return ''; // Term not found in text
+
+    var start = Math.max(index - contextLength, 0);
+    var end = Math.min(index + term.length + contextLength, text.length);
+    var snippet = text.substring(start, end);
+
+    // Highlight the search term in the snippet
+    return snippet.replace(new RegExp(term, 'gi'), `<span class='highlight'>${term}</span>`);
+}
+
+
                 
             //swipe effects with jquery
             /*
