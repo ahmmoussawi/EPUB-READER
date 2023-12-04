@@ -319,6 +319,7 @@ body {
 }
 
 .custom-select .selected-value {
+  text-align: right;
   padding: 10px;
   border: 1px solid #ccc;
   background-color: #fff;
@@ -343,6 +344,7 @@ body {
   padding: 10px;
   border-top: 1px solid #eee;
   cursor: pointer;
+  text-align: right;
 }
 
 .custom-select .options-list li:hover {
@@ -366,7 +368,33 @@ body {
     margin-bottom: 10px;
     box-sizing: border-box;
     border: 1px solid #ccc;
+    text-align: right;
 }
+
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
+.clear-search-button {
+  display: none; /* Initially hidden, shown via JavaScript */
+  position: absolute;
+  left: 10px;
+  top: 40%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666; /* Text color */
+  background-color: #fff; /* Background color of the circle */
+  border: 1px solid #ccc; /* Border color */
+  border-radius: 50%; /* Makes the background shape circular */
+  width: 20px; /* Width of the circle */
+  height: 20px; /* Height of the circle */
+  text-align: center;
+  line-height: 20px; /* Center the 'x' vertically */
+  font-size: 16px; /* Size of the 'x' character */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Optional: Adds a shadow for depth */
+}
+
 
 /* Styles for the modal */
 /* Add keyframes for slide-up animation */

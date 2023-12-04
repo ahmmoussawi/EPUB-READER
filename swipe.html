@@ -13,6 +13,7 @@
     <script type="text/javascript" src="turn.min.js"></script>
     <link rel="stylesheet" type="text/css" href="Style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
     <style type="text/css">
         body {
             display: Block;
@@ -99,7 +100,10 @@
     <div class="custom-select">
         <div class="selected-value">chapter</div>
         <ul class="options-list selecthidden">
-            <input type="text" id="custom-select-search" placeholder="Search...">
+            <div class="input-container">
+                <input type="text" id="custom-select-search" placeholder="بحث ...">
+                <span id="clearSearch" class="clear-search-button">&times;</span>
+            </div>
             <!-- Add more options as needed -->
         </ul>
     </div>
@@ -125,6 +129,32 @@
                     }
                 });
             });
+            //search Clear
+            document.getElementById('custom-select-search').addEventListener('input', function () {
+                    var searchInput = this;
+                    var clearButton = document.getElementById('clearSearch');
+
+                    if (searchInput.value.length >= 2) {
+                        clearButton.style.display = 'inline'; // Show clear button
+                    } else {
+                        clearButton.style.display = 'none'; // Hide clear button
+                    }
+                });
+
+                document.getElementById('clearSearch').addEventListener('click', function () {
+                    var searchInput = document.getElementById('custom-select-search');
+                    searchInput.value = '';
+                    this.style.display = 'none'; // Hide clear button
+
+                    // Show all options in the custom select
+                    var options = document.querySelectorAll('.custom-select .options-list li');
+                    options.forEach(function (option) {
+                        option.style.display = 'list-item'; // Adjust as per your initial style
+                    });
+
+                    // Focus back on the search input for immediate re-typing
+                    searchInput.focus();
+                });
 
         //open drop down on lst click
         document.getElementById('listIcon').addEventListener('click', function () {
@@ -351,10 +381,10 @@
 
             //search model 
             document.getElementById('searchIcon').addEventListener('click', function () {
-    var modal = document.getElementById('searchModal');
-    modal.style.display = 'block'; // Display the modal
-    modal.style.animation = 'slideUp 0.5s'; // Apply the animation
-});
+                var modal = document.getElementById('searchModal');
+                modal.style.display = 'block'; // Display the modal
+                modal.style.animation = 'slideUp 0.5s'; // Apply the animation
+            });
 
             // Get the modal
             var modal = document.getElementById("searchModal");
