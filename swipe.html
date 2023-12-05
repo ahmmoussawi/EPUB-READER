@@ -7,7 +7,7 @@
     <title>MOUSSAWI READER</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.js"></script>
 
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="turn.min.js"></script>
@@ -102,8 +102,13 @@
     <!-- search model-->
     <div id="searchModal" class="search-modal">
         <div class="search-modal-content">
-            <span class="close">&times;</span>
-            <input type="text" id="bookSearchInput" placeholder="Search in book...">
+            <div class="search-book-container">
+                <span class="close">&times;</span>
+                <input type="text" id="bookSearchInput" placeholder="بحث في الكتاب ...">
+                <span id="clearbookSearch" class="clear-book-search-button">&times;</span>
+            </div>
+
+            
             <div id="searchResults" class="search-results">
                 <!-- Search results will be displayed here -->
             </div>
@@ -176,7 +181,7 @@
         document.querySelector('.custom-select .selected-value').click();
          });
 
-         //load the book manully this will be changed later
+     //load the book manully this will be changed later
          
         document.getElementById("Showbooks").onclick = function() {
             document.getElementById('bookList').innerHTML = '';
@@ -217,6 +222,7 @@
                     height: 700,
                     spread: "none" // Set spread to none for single page view
                 });
+    
 
                 rendition.display(currentSectionIndex);
 
@@ -255,6 +261,7 @@
                 })
 
                 var title = document.getElementById("title");
+                
 
                 rendition.on("rendered", function (section) {
                     var current = book.navigation && book.navigation.get(section.href);
@@ -385,6 +392,7 @@
                 // Open/close custom select
                 $selectedValue.onclick = function () {
                     $customSelectList.classList.toggle('selecthidden');
+                    updateTOCSearchPlaceholder(book.package.metadata.language, book.package.metadata.direction);
                 };
 
                 // Synchronize custom select with TOC select
@@ -421,6 +429,7 @@
                 var modal = document.getElementById('searchModal');
                 modal.style.display = 'block'; // Display the modal
                 modal.style.animation = 'slideUp 0.5s'; // Apply the animation
+                updateBookSearchPlaceholder(book.package.metadata.language, book.package.metadata.direction); // Update
             });
 
             // Get the modal
@@ -477,8 +486,9 @@
                 var resultsContainer = document.getElementById('searchResults');
                 resultsContainer.innerHTML = '';
 
+                var placeholderText = getPlaceholderText(book.package.metadata.language,'searchResultPlaceholder');
                 if (results.length === 0) {
-                    resultsContainer.innerHTML = '<div>No matches found</div>';
+                    resultsContainer.innerHTML = `<div style="text-align:Center;">${placeholderText}</div>`;
                     return;
                 }
 
@@ -510,6 +520,29 @@ function highlightTextInSection(query) {
     }
 }
 
+            //clear book search
+            document.getElementById('bookSearchInput').addEventListener('input', function () {
+                var searchInput = this;
+                var clearButton = document.getElementById('clearbookSearch');
+
+                if (searchInput.value.length >= 2) {
+                    clearButton.style.display = 'inline'; // Show clear button
+                } else {
+                    clearButton.style.display = 'none'; // Hide clear button
+                }
+            });
+
+            document.getElementById('clearbookSearch').addEventListener('click', function () {
+                var searchInput = document.getElementById('bookSearchInput');
+                searchInput.value = '';
+                this.style.display = 'none'; // Hide clear button
+
+                // Show all options in the custom select
+
+                displaySearchResults('', '');
+                // Focus back on the search input for immediate re-typing
+                searchInput.focus();
+            });
 
 
 
@@ -525,8 +558,83 @@ function highlightTextInSection(query) {
     return snippet.replace(new RegExp(term, 'gi'), `<span class='highlight'>${term}</span>`);
 }
 
+    //localisations
+    ///////////////////////
+    //get the placeholder text 
 
+            function getPlaceholderText(bookLanguage, placeholderType) {
+                if (placeholderType === 'BookSearchPlaceholder') {
+                    switch (bookLanguage) {
+                        case 'en':
+                            return 'Search in the book...';
+                        case 'ar':
+                            return 'بحث في الكتاب...';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'Search in the book...'; // Default search placeholder
+                    }
+                }
+                else if (placeholderType === 'TOBsearchPlaceholder') {
+                    switch (bookLanguage) {
+                        case 'en':
+                            return 'Search...';
+                        case 'ar':
+                            return 'بحث...';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'Search...'; // Default search placeholder
+                    }
+                }
+                else if (placeholderType === 'searchResultPlaceholder') {
+                        switch (bookLanguage) {
+                        case 'en':
+                            return 'No items to display';
+                        case 'ar':
+                            return 'لا توجد عناصر لعرضها';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'No items to display'; // Default placeholder
+                    }
+                }
+                else {
+                    // Handle other placeholder types if needed
+                    return '';
+                }
+            }
+
+            function updateBookSearchPlaceholder(bookLanguage, bookDirection) {
+                var searchInput = document.getElementById('bookSearchInput');
+                var placeholderText = getPlaceholderText(bookLanguage, 'BookSearchPlaceholder');
+                searchInput.setAttribute('placeholder', placeholderText);
+                var direction = (bookLanguage === 'ar' || bookLanguage === 'he') ? 'rtl' : 'ltr'; // Add more RTL languages as needed
+                searchInput.style.direction = direction;
+                // Apply the direction to other elements if necessary
+                document.getElementById('searchModal').style.direction = direction;
+                if (direction=='rtl'){
+                    document.getElementById('clearbookSearch').style.left=5 + 'px';
+                } else {
+                    document.getElementById('clearbookSearch').style.right=5 + 'px';
+                }
                 
+            }
+
+            function updateTOCSearchPlaceholder(bookLanguage, bookDirection) {
+                var searchInput = document.getElementById('custom-select-search');
+                var placeholderText = getPlaceholderText(bookLanguage, 'TOBsearchPlaceholder');
+                searchInput.setAttribute('placeholder', placeholderText);
+                var direction = (bookLanguage === 'ar' || bookLanguage === 'he') ? 'rtl' : 'ltr'; // Add more RTL languages as needed
+                searchInput.style.direction = direction;
+                // Apply the direction to other elements if necessary
+                document.querySelector('.custom-select .options-list').style.direction = direction;
+                if (direction=='rtl'){
+                    document.getElementById('clearSearch').style.left=10 + 'px';
+                } else {
+                    document.getElementById('clearSearch').style.right=10 + 'px';
+                }
+            }
+            
+           
+
             //swipe effects with jquery
             /*
             $(window).ready(function () {
