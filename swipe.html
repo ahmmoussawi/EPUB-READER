@@ -6,18 +6,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MOUSSAWI READER</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="js/libs/jquery.min.js"></script>
+
+    
+    
+    <script src="js/libs/zip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.js"></script>
 
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="turn.min.js"></script>
+    <script src="js/reader.js"></script>
+
+    
     <link rel="stylesheet" type="text/css" href="Style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 
     <style type="text/css">
         body {
             display: Block;
-
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            right: 0;
+            /* left: 40px; */
+            /* border-radius: 5px 0px 0px 5px; */
+            border-radius: 5px;
+            background: #fff;
+            overflow: hidden;
+            -webkit-transition: -webkit-transform .4s, width .2s;
+            -moz-transition: -webkit-transform .4s, width .2s;
+            -ms-transition: -webkit-transform .4s, width .2s;
+            -moz-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            -webkit-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            -ms-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            box-shadow: inset 0 0 50px rgba(0,0,0,.1);
         }
 
         #viewer {
@@ -25,10 +45,18 @@
             height: 700px;
             box-shadow: 0 0 4px #ccc;
             padding: 10px 10px 0px 10px;
-            margin: 5px auto;
-            background: white;
+            margin: 5px auto;         
             transition: opacity 0.5s ease;
             opacity: 1;
+            word-spacing: 0px;
+            line-height: 0;
+            vertical-align: top;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-flow: row;
         }
         .hidden {
             opacity: 0;
@@ -94,11 +122,16 @@
     <div id="header">
         <a href="#" id="navArrowLeft" class="header-icon"><i class="header-icon fas fa-arrow-left"></i></a>
         <div id="icons-container">  
-            <i class="header-icon fas fa-thumbtack" id="pinIcon"></i>
+            <a id ="bookmark"><i class="header-icon fas fa-thumbtack" id="pinIcon"></i></a>
             <i class="header-icon fas fa-search" id="searchIcon"></i>
             <i class="header-icon fas fa-list" id="listIcon"></i>
         </div>
     </div>
+    <div id="title-controls">
+        <a id="bookmark" class="icon-bookmark-empty">Bookmark</a>
+        <a id="setting" class="icon-cog">Settings</a>
+        <a id="fullscreen" class="icon-resize-full">Fullscreen</a>
+      </div>
     <!-- search model-->
     <div id="searchModal" class="search-modal">
         <div class="search-modal-content">
