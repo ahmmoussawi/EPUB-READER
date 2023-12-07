@@ -1,157 +1,700 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>MOUSSAWI READER</title>
-      
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.min.js"></script>
-      
-        <link rel="stylesheet" type="text/css" href="Style.css">
-      
-    </head>
-    <body>
-        <!-- <div id="title"></div> -->
-        <select id="toc"></select>
-        <div id="viewer" class="spreads"></div>
-        <a id="prev" href="#prev" class="arrow">‹</a>
-        <a id="next" href="#next" class="arrow">›</a>
-      
-  <script>
-    var params = URLSearchParams && new URLSearchParams(document.location.search.substring(1));
-    var url = params && params.get("url") && decodeURIComponent(params.get("url"));
-    var currentSectionIndex = (params && params.get("loc")) ? params.get("loc") : undefined;
 
-    // Load the opf
-    var book = ePub(url || "test1.epub");
-    var rendition = book.renderTo("viewer", {
-      width: "100%",
-      height: 600,
-      spread: "always"
-    });
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MOUSSAWI READER</title>
 
-    rendition.display(currentSectionIndex);
+    <script src="js/libs/jquery.min.js"></script>
 
-    book.ready.then(function() {
+    
+    
+    <script src="js/libs/zip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3/dist/epub.js"></script>
 
-      var next = document.getElementById("next");
+    <script src="js/reader.js"></script>
 
-      next.addEventListener("click", function(e){
-        book.package.metadata.direction === "rtl" ? rendition.prev() : rendition.next();
-        e.preventDefault();
-      }, false);
+    
+    <link rel="stylesheet" type="text/css" href="Style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 
-      var prev = document.getElementById("prev");
-      prev.addEventListener("click", function(e){
-        book.package.metadata.direction === "rtl" ? rendition.next() : rendition.prev();
-        e.preventDefault();
-      }, false);
-
-      var keyListener = function(e){
-
-        // Left Key
-        if ((e.keyCode || e.which) == 37) {
-          book.package.metadata.direction === "rtl" ? rendition.next() : rendition.prev();
+    <style type="text/css">
+        body {
+            display: Block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            right: 0;
+            /* left: 40px; */
+            /* border-radius: 5px 0px 0px 5px; */
+            border-radius: 5px;
+            background: #fff;
+            overflow: hidden;
+            -webkit-transition: -webkit-transform .4s, width .2s;
+            -moz-transition: -webkit-transform .4s, width .2s;
+            -ms-transition: -webkit-transform .4s, width .2s;
+            -moz-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            -webkit-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            -ms-box-shadow: inset 0 0 50px rgba(0,0,0,.1);
+            box-shadow: inset 0 0 50px rgba(0,0,0,.1);
         }
 
-        // Right Key
-        if ((e.keyCode || e.which) == 39) {
-          book.package.metadata.direction === "rtl" ? rendition.prev() : rendition.next();
+        #viewer {
+            width: 290px;
+            height: 700px;
+            box-shadow: 0 0 4px #ccc;
+            padding: 10px 10px 0px 10px;
+            margin: 5px auto;         
+            transition: opacity 0.5s ease;
+            opacity: 1;
+            word-spacing: 0px;
+            line-height: 0;
+            vertical-align: top;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-flow: row;
+        }
+        .hidden {
+            opacity: 0;
+        }
+        .highlight {
+    background-color: yellow;
+    color: black;
+}
+
+.search-result-item {
+    cursor: pointer;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.search-result-item:hover {
+    background-color: #f0f0f0;
+}
+        #magazine{
+            width:100%;
+            height:752px;
+        }
+        #magazine .turn-page{
+            background-color:rgba(248, 243, 243, 0.89);
+            background-size:100% 100%;
+        }
+            
+        #Showbooks {
+                width: 100px;
+                height: 20px;
+                font-size: 10px;
+                text-align: center;
+                display: flex;
+                justify-content: center;
+                
+        }
+        
+        @media only screen and (min-device-width : 320px) and (max-device-width : 667px) {
+            #viewer {
+                width: auto !important;
+                height: 90%;
+            }
+
+            #viewer iframe {
+                /* pointer-events: none; */
+            }
+
+            .arrow {
+                position: inherit;
+                display: block;
+            }
+           
+        }
+    </style>
+</head>
+
+<body>
+    <button id="Showbooks">Show Books</button>
+    <ul id="bookList">
+        <!-- List of books will be populated here -->
+    </ul>
+    <div id="header">
+        <a href="#" id="navArrowLeft" class="header-icon"><i class="header-icon fas fa-arrow-left"></i></a>
+        <div id="icons-container">  
+            <a id ="bookmark"><i class="header-icon fas fa-thumbtack" id="pinIcon"></i></a>
+            <i class="header-icon fas fa-search" id="searchIcon"></i>
+            <i class="header-icon fas fa-list" id="listIcon"></i>
+        </div>
+    </div>
+  
+    <!-- search model-->
+    <div id="searchModal" class="search-modal">
+        <div class="search-modal-content">
+            <div class="search-book-container">
+                <span class="close">&times;</span>
+                <input type="text" id="bookSearchInput" placeholder="بحث في الكتاب ...">
+                <span id="clearbookSearch" class="clear-book-search-button">&times;</span>
+            </div>
+
+            
+            <div id="searchResults" class="search-results">
+                <!-- Search results will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- <div id="title"></div> -->
+    <div class="custom-select">
+        <div class="selected-value">chapter</div>
+        <ul class="options-list selecthidden">
+            <div class="input-container">
+                <input type="text" id="custom-select-search" placeholder="بحث ...">
+                <span id="clearSearch" class="clear-search-button">&times;</span>
+            </div>
+            <!-- Add more options as needed -->
+        </ul>
+    </div>
+    <!-- <div id="title"></div> -->
+    <select id="toc"></select>
+    <div id="viewer"></div>
+    <a id="prev" href="#prev" class="arrow">‹</a>
+    <a id="next" href="#next" class="arrow">›</a>
+
+    <script>
+
+        //table of content search 
+        document.getElementById('custom-select-search').addEventListener('input', function (e) {
+                var searchValue = e.target.value.toLowerCase();
+                var options = document.querySelectorAll('.custom-select .options-list li');
+
+                options.forEach(function (option) {
+                    var text = option.textContent.toLowerCase();
+                    if (text.includes(searchValue)) {
+                        option.style.display = '';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            });
+            //search Clear
+            document.getElementById('custom-select-search').addEventListener('input', function () {
+                    var searchInput = this;
+                    var clearButton = document.getElementById('clearSearch');
+
+                    if (searchInput.value.length >= 2) {
+                        clearButton.style.display = 'inline'; // Show clear button
+                    } else {
+                        clearButton.style.display = 'none'; // Hide clear button
+                    }
+                });
+
+                document.getElementById('clearSearch').addEventListener('click', function () {
+                    var searchInput = document.getElementById('custom-select-search');
+                    searchInput.value = '';
+                    this.style.display = 'none'; // Hide clear button
+
+                    // Show all options in the custom select
+                    var options = document.querySelectorAll('.custom-select .options-list li');
+                    options.forEach(function (option) {
+                        option.style.display = 'list-item'; // Adjust as per your initial style
+                    });
+
+                    // Focus back on the search input for immediate re-typing
+                    searchInput.focus();
+                });
+
+        //open drop down on lst click
+        document.getElementById('listIcon').addEventListener('click', function () {
+        document.querySelector('.custom-select .selected-value').click();
+         });
+
+     //load the book manully this will be changed later
+         
+        document.getElementById("Showbooks").onclick = function() {
+            document.getElementById('bookList').innerHTML = '';
+             var books = [
+                { title: "Al Din AlQayem", url: "test1.epub" },
+                { title: "Auction Book", url: "pg72176.epub" }
+                // Add more books as needed
+            ];
+
+            var bookList = document.getElementById('bookList');
+
+            
+
+            books.forEach(function(book) {
+                var listItem = document.createElement('li');
+                listItem.textContent = book.title;
+                listItem.onclick = function() {
+                    document.getElementById('viewer').innerHTML = '';
+                    document.getElementById('toc').innerHTML = '';
+                    loadEpub(book.url);
+                };
+                bookList.appendChild(listItem);
+            });
+        };
+        
+
+        //epub begining
+
+        var params = URLSearchParams && new URLSearchParams(document.location.search.substring(1));
+        var url = params && params.get("url") && decodeURIComponent(params.get("url"));
+        var currentSectionIndex = (params && params.get("loc")) ? params.get("loc") : undefined;
+
+        function loadEpub(bookUrl) {
+                // Load the epub links
+                var book = ePub(url || bookUrl);
+                var rendition = book.renderTo("viewer", {
+                    width: "100%",
+                    height: 700,
+                    spread: "none" // Set spread to none for single page view
+                });
+    
+
+                rendition.display(currentSectionIndex);
+
+                book.ready.then(function () {
+
+                    var next = document.getElementById("next");
+
+                    next.addEventListener("click", function (e) {
+                        book.package.metadata.direction === "rtl" ? rendition.prev() : rendition.next();
+                        e.preventDefault();
+                    }, false);
+
+                    var prev = document.getElementById("prev");
+                    prev.addEventListener("click", function (e) {
+                        book.package.metadata.direction === "rtl" ? rendition.next() : rendition.prev();
+                        e.preventDefault();
+                    }, false);
+
+                    var keyListener = function (e) {
+
+                        // Left Key
+                        if ((e.keyCode || e.which) == 37) {
+                            book.package.metadata.direction === "rtl" ? rendition.next() : rendition.prev();
+                        }
+
+                        // Right Key
+                        if ((e.keyCode || e.which) == 39) {
+                            book.package.metadata.direction === "rtl" ? rendition.prev() : rendition.next();
+                        }
+
+                    };
+
+                    rendition.on("keyup", keyListener);
+                    document.addEventListener("keyup", keyListener, false);
+
+                })
+
+                var title = document.getElementById("title");
+                
+
+                rendition.on("rendered", function (section) {
+                    var current = book.navigation && book.navigation.get(section.href);
+
+                    if (current) {
+                        var $select = document.getElementById("toc");
+                        var $selected = $select.querySelector("option[selected]");
+                        if ($selected) {
+                            $selected.removeAttribute("selected");
+                        }
+
+                        var $options = $select.querySelectorAll("option");
+                        for (var i = 0; i < $options.length; ++i) {
+                            let selected = $options[i].getAttribute("ref") === current.href;
+                            if (selected) {
+                                $options[i].setAttribute("selected", "");
+                            }
+                        }
+                    }
+
+                });
+
+                rendition.on("relocated", function (location) {
+                console.log(location);
+
+                var next = book.package.metadata.direction === "rtl" ? document.getElementById("prev") : document.getElementById("next");
+                var prev = book.package.metadata.direction === "rtl" ? document.getElementById("next") : document.getElementById("prev");
+
+                if (location.atEnd) {
+                    next.style.visibility = "hidden";
+                } else {
+                    next.style.visibility = "visible";
+                }
+
+                if (location.atStart) {
+                    prev.style.visibility = "hidden";
+                } else {
+                    prev.style.visibility = "visible";
+                }
+
+                // Update custom select based on current location
+                var current = book.navigation && book.navigation.get(location.start.href);
+                var $customSelectList = document.querySelector('.custom-select .options-list');
+                var $selectedValue = document.querySelector('.custom-select .selected-value');
+
+                if (current) {
+                    updateCustomSelect(current.href);
+                    var $options = $customSelectList.querySelectorAll('li');
+                    $options.forEach(function (option) {
+                        if (option.getAttribute('data-ref') === current.href) {
+                            $selectedValue.textContent = option.textContent;
+                        }
+                    });
+                }
+                // When selecting an option from the custom select
+                    var $customSelectList = document.querySelector('.custom-select .options-list');
+                    $customSelectList.addEventListener('click', function (event) {
+                        if (event.target.tagName.toLowerCase() === 'li') {
+                            updateCustomSelect(event.target.getAttribute('data-ref'));
+                            // Hide the custom select list
+                            $customSelectList.classList.add('selecthidden');
+                        }
+                    });
+            });
+
+                rendition.on("layout", function (layout) {
+                    let viewer = document.getElementById("viewer");
+                    viewer.classList.add('single'); // Ensure single page layout
+                });
+
+                window.addEventListener("unload", function () {
+                    console.log("unloading");
+                    this.book.destroy();
+                });
+
+               // swipe effedt navigation to
+               rendition.on("displayed", event => {
+                let start = null;
+                let end = null;
+                const el = event.document.documentElement;
+
+                el.addEventListener('touchstart', event => {
+                    start = event.changedTouches[0];
+                    console.log("start touch");
+                });
+                el.addEventListener('touchend', event => {
+                    end = event.changedTouches[0];
+
+                    let hr = (end.screenX - start.screenX) / el.getBoundingClientRect().width;
+                    let vr = (end.screenY - start.screenY) / el.getBoundingClientRect().height;
+
+                    if (hr > vr && hr > 0.25) return rendition.prev();
+                    if (hr < vr && hr < -0.25) return rendition.next();
+                    if (vr > hr && vr > 0.25) return;
+                    if (vr < hr && vr < -0.25) return;
+                });
+            });
+
+            //book filing drop down list
+            book.loaded.navigation.then(function (toc) {
+                var $select = document.getElementById("toc"),
+                    $customSelect = document.querySelector('.custom-select'),
+                    $customSelectList = $customSelect.querySelector('.options-list'),
+                    $selectedValue = $customSelect.querySelector('.selected-value'),
+                    docfrag = document.createDocumentFragment();
+
+                toc.forEach(function (chapter, index) {
+                    var option = document.createElement("option");
+                    var customOption = document.createElement("li");
+
+                    option.textContent = chapter.label;
+                    option.setAttribute("ref", chapter.href);
+
+                    customOption.textContent = chapter.label;
+                    customOption.setAttribute("data-ref", chapter.href);
+                    customOption.onclick = function () {
+                        $selectedValue.textContent = chapter.label;
+                        $customSelectList.classList.add('selecthidden');
+                        rendition.display(chapter.href);
+                    };
+
+                    docfrag.appendChild(option);
+                    $customSelectList.appendChild(customOption);
+                });
+
+                $select.appendChild(docfrag);
+
+                // Open/close custom select
+                $selectedValue.onclick = function () {
+                    $customSelectList.classList.toggle('selecthidden');
+                    updateTOCSearchPlaceholder(book.package.metadata.language, book.package.metadata.direction);
+                };
+
+                // Synchronize custom select with TOC select
+                $select.onchange = function () {
+                    var index = $select.selectedIndex,
+                        url = $select.options[index].getAttribute("ref"),
+                        text = $select.options[index].textContent;
+
+                    $selectedValue.textContent = text;
+                    rendition.display(url);
+                    return false;
+                };
+            });
+            function updateCustomSelect(currentChapterHref) {
+                var $customSelectList = document.querySelector('.custom-select .options-list');
+                var $selectedValue = document.querySelector('.custom-select .selected-value');
+                var $options = $customSelectList.querySelectorAll('li');
+                $options.forEach(function (option) {
+                    if (option.getAttribute('data-ref') === currentChapterHref) {
+                        $selectedValue.textContent = option.textContent;
+                        // Highlight the selected option
+                        option.classList.add('custom-option-selected');
+                        // Scroll to the selected option
+                        option.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        option.classList.remove('custom-option-selected');
+                    }
+                });
+            }
+
+
+            //search model 
+            document.getElementById('searchIcon').addEventListener('click', function () {
+                var modal = document.getElementById('searchModal');
+                modal.style.display = 'block'; // Display the modal
+                modal.style.animation = 'slideUp 0.5s'; // Apply the animation
+                updateBookSearchPlaceholder(book.package.metadata.language, book.package.metadata.direction); // Update
+            });
+
+            // Get the modal
+            var modal = document.getElementById("searchModal");
+
+            // Get the <span> element that closes the modal
+            var span = document.getElementsByClassName("close")[0];
+
+            // When the user clicks on <span> (x), close the modal
+            span.onclick = function () {
+                modal.style.display = "none";
+            }
+
+            // Close the modal if the user clicks anywhere outside of it
+            window.onclick = function (event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            // Implement search functionality
+            ////////////////////////////////////////////////////////////////////////
+            function doSearch(q) {
+                return Promise.all(
+                    book.spine.spineItems.map(item =>
+                        item.load(book.load.bind(book))
+                            .then(item.find.bind(item, q))
+                            .finally(item.unload.bind(item))
+                    )
+                ).then(results => {
+                    // Flatten the results array and add chapter information
+                    return [].concat.apply([], results).map(result => {
+                        // Add chapter href to each result for navigation
+                        result.href = result.baseUri;
+                        return result;
+                    });
+                });
+            }
+                    
+            document.getElementById('bookSearchInput').addEventListener('input', function (e) {
+                var searchQuery = e.target.value.trim();
+                if (searchQuery.length > 2) {
+                    doSearch(searchQuery).then(results => {
+                        displaySearchResults(results, searchQuery);
+                    });
+                } else {
+                    document.getElementById('searchResults').innerHTML = '';
+                }
+            });
+
+
+
+            function displaySearchResults(results, query) {
+                var resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+
+                var placeholderText = getPlaceholderText(book.package.metadata.language,'searchResultPlaceholder');
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = `<div style="text-align:Center;">${placeholderText}</div>`;
+                    return;
+                }
+
+                results.forEach(function (result) {
+                    var resultElement = document.createElement('div');
+                    resultElement.className = 'search-result-item';
+                    // Use query for highlighting
+                    resultElement.innerHTML = `<strong>${result.excerpt.replace(new RegExp(query, "gi"), match => `<span class='highlight'>${match}</span>`)}</strong>`;
+                    resultElement.addEventListener('click', function () {
+                        book.rendition.display(result.cfi); // Navigate to the specific CFI
+                        modal.style.display = "none";
+                    });
+                    resultsContainer.appendChild(resultElement);
+                });
+            }
+function highlightTextInSection(query) {
+    var currentContents = book.rendition.getContents();
+    if (currentContents && query.length > 2) {
+        currentContents.forEach(content => {
+            var doc = content.document;
+            var body = doc.body;
+            var text = body.innerHTML;
+            var searchRegex = new RegExp(query, 'gi');
+
+            // Replace and highlight the found text
+            body.innerHTML = text.replace(searchRegex, `<span class='highlight'>${query}</span>`);
+            console.log(text);
+        });
+    }
+}
+
+            //clear book search
+            document.getElementById('bookSearchInput').addEventListener('input', function () {
+                var searchInput = this;
+                var clearButton = document.getElementById('clearbookSearch');
+
+                if (searchInput.value.length >= 2) {
+                    clearButton.style.display = 'inline'; // Show clear button
+                } else {
+                    clearButton.style.display = 'none'; // Hide clear button
+                }
+            });
+
+            document.getElementById('clearbookSearch').addEventListener('click', function () {
+                var searchInput = document.getElementById('bookSearchInput');
+                searchInput.value = '';
+                this.style.display = 'none'; // Hide clear button
+
+                // Show all options in the custom select
+
+                displaySearchResults('', '');
+                // Focus back on the search input for immediate re-typing
+                searchInput.focus();
+            });
+
+
+
+            function createSnippet(text, term, contextLength = 30) {
+    var index = text.toLowerCase().indexOf(term.toLowerCase());
+    if (index === -1) return ''; // Term not found in text
+
+    var start = Math.max(index - contextLength, 0);
+    var end = Math.min(index + term.length + contextLength, text.length);
+    var snippet = text.substring(start, end);
+
+    // Highlight the search term in the snippet
+    return snippet.replace(new RegExp(term, 'gi'), `<span class='highlight'>${term}</span>`);
+}
+
+    //localisations
+    ///////////////////////
+    //get the placeholder text 
+
+            function getPlaceholderText(bookLanguage, placeholderType) {
+                if (placeholderType === 'BookSearchPlaceholder') {
+                    switch (bookLanguage) {
+                        case 'en':
+                            return 'Search in the book...';
+                        case 'ar':
+                            return 'بحث في الكتاب...';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'Search in the book...'; // Default search placeholder
+                    }
+                }
+                else if (placeholderType === 'TOBsearchPlaceholder') {
+                    switch (bookLanguage) {
+                        case 'en':
+                            return 'Search...';
+                        case 'ar':
+                            return 'بحث...';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'Search...'; // Default search placeholder
+                    }
+                }
+                else if (placeholderType === 'searchResultPlaceholder') {
+                        switch (bookLanguage) {
+                        case 'en':
+                            return 'No items to display';
+                        case 'ar':
+                            return 'لا توجد عناصر لعرضها';
+                        // Add more cases for other languages as needed
+                        default:
+                            return 'No items to display'; // Default placeholder
+                    }
+                }
+                else {
+                    // Handle other placeholder types if needed
+                    return '';
+                }
+            }
+
+            function updateBookSearchPlaceholder(bookLanguage, bookDirection) {
+                var searchInput = document.getElementById('bookSearchInput');
+                var placeholderText = getPlaceholderText(bookLanguage, 'BookSearchPlaceholder');
+                searchInput.setAttribute('placeholder', placeholderText);
+                var direction = (bookLanguage === 'ar' || bookLanguage === 'he') ? 'rtl' : 'ltr'; // Add more RTL languages as needed
+                searchInput.style.direction = direction;
+                // Apply the direction to other elements if necessary
+                document.getElementById('searchModal').style.direction = direction;
+                if (direction=='rtl'){
+                    document.getElementById('clearbookSearch').style.left=5 + 'px';
+                } else {
+                    document.getElementById('clearbookSearch').style.right=5 + 'px';
+                }
+                
+            }
+
+            function updateTOCSearchPlaceholder(bookLanguage, bookDirection) {
+                var searchInput = document.getElementById('custom-select-search');
+                var placeholderText = getPlaceholderText(bookLanguage, 'TOBsearchPlaceholder');
+                searchInput.setAttribute('placeholder', placeholderText);
+                var direction = (bookLanguage === 'ar' || bookLanguage === 'he') ? 'rtl' : 'ltr'; // Add more RTL languages as needed
+                searchInput.style.direction = direction;
+                // Apply the direction to other elements if necessary
+                document.querySelector('.custom-select .options-list').style.direction = direction;
+                if (direction=='rtl'){
+                    document.getElementById('clearSearch').style.left=10 + 'px';
+                } else {
+                    document.getElementById('clearSearch').style.right=10 + 'px';
+                }
+            }
+            
+           
+
+            //swipe effects with jquery
+            /*
+            $(window).ready(function () {
+                    $('#magazine').turn({
+                        display: 'single',
+                        acceleration: true,
+                        gradients: !$.isTouch,
+                        elevation: 50,
+                        when: {
+                            turned: function (e, page) {
+                                /*console.log('Current view: ', $(this).turn('view'));
+                            }
+                        }
+                    });
+                });
+
+
+                $(window).bind('keydown', function (e) {
+
+                    if (e.keyCode == 37)
+                        $('#magazine').turn('previous');
+                    else if (e.keyCode == 39)
+                        $('#magazine').turn('next');
+
+                });
+                */
+
         }
 
-      };
-
-      rendition.on("keyup", keyListener);
-      document.addEventListener("keyup", keyListener, false);
-
-    })
-
-    var title = document.getElementById("title");
-
-    rendition.on("rendered", function(section){
-      var current = book.navigation && book.navigation.get(section.href);
-
-      if (current) {
-        var $select = document.getElementById("toc");
-        var $selected = $select.querySelector("option[selected]");
-        if ($selected) {
-          $selected.removeAttribute("selected");
-        }
-
-        var $options = $select.querySelectorAll("option");
-        for (var i = 0; i < $options.length; ++i) {
-          let selected = $options[i].getAttribute("ref") === current.href;
-          if (selected) {
-            $options[i].setAttribute("selected", "");
-          }
-        }
-      }
-
-    });
-
-    rendition.on("relocated", function(location){
-      console.log(location);
-
-      var next = book.package.metadata.direction === "rtl" ?  document.getElementById("prev") : document.getElementById("next");
-      var prev = book.package.metadata.direction === "rtl" ?  document.getElementById("next") : document.getElementById("prev");
-
-      if (location.atEnd) {
-        next.style.visibility = "hidden";
-      } else {
-        next.style.visibility = "visible";
-      }
-
-      if (location.atStart) {
-        prev.style.visibility = "hidden";
-      } else {
-        prev.style.visibility = "visible";
-      }
-
-    });
-
-    rendition.on("layout", function(layout) {
-      let viewer = document.getElementById("viewer");
-
-      if (layout.spread) {
-        viewer.classList.remove('single');
-      } else {
-        viewer.classList.add('single');
-      }
-    });
-
-    window.addEventListener("unload", function () {
-      console.log("unloading");
-      this.book.destroy();
-    });
-
-    book.loaded.navigation.then(function(toc){
-			var $select = document.getElementById("toc"),
-					docfrag = document.createDocumentFragment();
-
-			toc.forEach(function(chapter) {
-				var option = document.createElement("option");
-				option.textContent = chapter.label;
-				option.setAttribute("ref", chapter.href);
-
-				docfrag.appendChild(option);
-			});
-
-			$select.appendChild(docfrag);
-
-			$select.onchange = function(){
-					var index = $select.selectedIndex,
-							url = $select.options[index].getAttribute("ref");
-					rendition.display(url);
-					return false;
-			};
-
-		});
-
-
-
-
-  </script>
+    </script>
 
 </body>
+
 </html>
